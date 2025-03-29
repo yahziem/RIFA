@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Rifa </title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            text-align: center;
+            background-color: #000;
+            color: #fff;
+        }
+        .container {
+            max-width: 600px;
+            margin: auto;
+            background: #222;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+        }
+        input, button, select {
+            margin: 5px;
+            padding: 10px;
+            width: calc(100% - 22px);
+            border: 1px solid #555;
+            border-radius: 4px;
+            background-color: #333;
+            color: #fff;
+        }
+        button {
+            background-color: #007BFF;
+            color: white;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #0056b3;
+        }
+        ul {
+            list-style: none;
+            padding: 0;
+        }
+        li {
+            background: #444;
+            margin: 5px 0;
+            padding: 10px;
+            border-radius: 4px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        .actions button {
+            margin-left: 5px;
+            padding: 5px 10px;
+            font-size: 12px;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Rifa</h2>
+        <div id="auth">
+            <input type="text" id="usuario" placeholder="Usuario">
+            <input type="password" id="contraseña" placeholder="Contraseña">
+            <button onclick="iniciarSesion()">Iniciar Sesión</button>
+        </div>
+        <div id="app" style="display: none;">
+            <input type="text" id="nombre" placeholder="Nombre">
+            <input type="text" id="telefono" placeholder="Teléfono">
+            <button onclick="agregarParticipante()">Agregar</button>
+            <br>
+            <input type="text" id="nuevaLista" placeholder="Nombre de lista">
+            <button onclick="crearLista()">Crear Lista</button>
+            <select id="listas" onchange="cambiarLista()"></select>
+            <button onclick="sortear()">Sortear</button>
+            <button onclick="editarLista()">Editar Lista</button>
+            <button onclick="borrarLista()">Borrar Lista</button>
+            <ul id="participantes"></ul>
+        </div>
+    </div>
+    
+    <script>
+        // Generar un hash de la contraseña para mayor seguridad
+        const usuarioLocal = "admin";
+        const contraseñaHash = btoa("1234"); // Contraseña encriptada (base64)
+
+        let listas = JSON.parse(localStorage.getItem("rifas")) || { "Rifa Principal": [] };
+        let listaActual = "Rifa Principal";
+
+        function iniciarSesion() {
+            const usuario = document.getElementById("usuario").value;
+            const contraseña = document.getElementById("contraseña").value;
+            if (usuario === usuarioLocal && btoa(contraseña) === contraseñaHash) {
+                document.getElementById("auth").style.display = "none";
+                document.getElementById("app").style.display = "block";
+                actualizarSelect();
+            } else {
+                alert("Usuario o contraseña incorrectos");
+            }
+        }
+
+        function actualizarSelect() {
+            let select = document.getElementById("listas");
+            select.innerHTML = "";
+            for (let lista in listas) {
+                let option = document.createElement("option");
+                option.value = lista;
+                option.textContent = lista;
+                select.appendChild(option);
+            }
+            select.value = listaActual;
+            mostrarParticipantes();
+        }
+
+        function agregarParticipante() {
+            let nombre = document.getElementById("nombre").value.trim();
+            let telefono = document.getElementById("telefono").value.trim();
+            if (nombre && telefono) {
+                listas[listaActual].push({ nombre, telefono });
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                document.getElementById("nombre").value = "";
+                document.getElementById("telefono").value = "";
+                mostrarParticipantes();
+            } else {
+                alert("Por favor, completa todos los campos.");
+            }
+        }
+
+        function mostrarParticipantes() {
+            let lista = document.getElementById("participantes");
+            lista.innerHTML = "";
+            listas[listaActual].forEach((p, index) => {
+                let li = document.createElement("li");
+                li.innerHTML = `
+                    ${p.nombre} - ${p.telefono}
+                    <div class="actions">
+                        <button onclick="editarParticipante(${index})">Editar</button>
+                        <button onclick="borrarParticipante(${index})">Borrar</button>
+                    </div>
+                `;
+                lista.appendChild(li);
+            });
+        }
+
+        function editarParticipante(index) {
+            let nuevoNombre = prompt("Nuevo nombre:", listas[listaActual][index].nombre);
+            let nuevoTelefono = prompt("Nuevo teléfono:", listas[listaActual][index].telefono);
+            if (nuevoNombre && nuevoTelefono) {
+                listas[listaActual][index] = { nombre: nuevoNombre, telefono: nuevoTelefono };
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                mostrarParticipantes();
+            }
+        }
+
+        function borrarParticipante(index) {
+            if (confirm("¿Seguro que deseas borrar este participante?")) {
+                listas[listaActual].splice(index, 1);
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                mostrarParticipantes();
+            }
+        }
+
+        function crearLista() {
+            let nuevaLista = document.getElementById("nuevaLista").value.trim();
+            if (nuevaLista && !listas[nuevaLista]) {
+                listas[nuevaLista] = [];
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                document.getElementById("nuevaLista").value = "";
+                listaActual = nuevaLista;
+                actualizarSelect();
+            } else {
+                alert("El nombre de la lista ya existe o es inválido.");
+            }
+        }
+
+        function cambiarLista() {
+            listaActual = document.getElementById("listas").value;
+            mostrarParticipantes();
+        }
+
+        function editarLista() {
+            let nuevoNombre = prompt("Nuevo nombre para la lista:", listaActual);
+            if (nuevoNombre && !listas[nuevoNombre]) {
+                listas[nuevoNombre] = listas[listaActual];
+                delete listas[listaActual];
+                listaActual = nuevoNombre;
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                actualizarSelect();
+            } else {
+                alert("El nombre ya existe o es inválido.");
+            }
+        }
+
+        function borrarLista() {
+            if (confirm(`¿Seguro que deseas borrar la lista "${listaActual}"?`)) {
+                delete listas[listaActual];
+                listaActual = Object.keys(listas)[0] || "Rifa Principal";
+                localStorage.setItem("rifas", JSON.stringify(listas));
+                actualizarSelect();
+            }
+        }
+
+        function sortear() {
+            if (listas[listaActual].length > 0) {
+                let ganador = listas[listaActual][Math.floor(Math.random() * listas[listaActual].length)];
+                alert(`El ganador es: ${ganador.nombre} - ${ganador.telefono}`);
+            } else {
+                alert("No hay participantes en esta lista.");
+            }
+        }
+
+        actualizarSelect();
+    </script>
+</body>
+</html>
