@@ -3,136 +3,179 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Rifa </title>
+    <title>Rifa Fácil</title>
     <style>
         body {
-            font-family: Arial, sans-serif;
+            font-family: 'Arial', sans-serif;
             text-align: center;
-            background-color: #000;
-            color: #fff;
+            background-color: #121212;
+            color: #ffffff;
+            margin: 0;
+            padding: 0;
         }
         .container {
-            max-width: 600px;
-            margin: auto;
-            background: #222;
+            max-width: 700px;
+            margin: 20px auto;
+            background: #1e1e1e;
             padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 4px 8px rgba(255, 255, 255, 0.1);
+            border-radius: 10px;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.5);
+        }
+        h2, h3 {
+            color: #00d1ff;
         }
         input, button, select {
-            margin: 5px;
-            padding: 10px;
-            width: calc(100% - 22px);
-            border: 1px solid #555;
-            border-radius: 4px;
-            background-color: #333;
-            color: #fff;
+            margin: 10px 0;
+            padding: 12px;
+            width: calc(100% - 24px);
+            border: none;
+            border-radius: 5px;
+            background-color: #2a2a2a;
+            color: #ffffff;
+            font-size: 16px;
+        }
+        input::placeholder {
+            color: #aaaaaa;
         }
         button {
-            background-color: #007BFF;
-            color: white;
+            background-color: #00d1ff;
+            color: #000;
+            font-weight: bold;
             cursor: pointer;
+            transition: background-color 0.3s ease;
         }
         button:hover {
-            background-color: #0056b3;
+            background-color: #00a3cc;
+        }
+        select {
+            background-color: #2a2a2a;
         }
         ul {
             list-style: none;
             padding: 0;
+            margin: 20px 0;
         }
         li {
-            background: #444;
-            margin: 5px 0;
-            padding: 10px;
-            border-radius: 4px;
+            background: #2a2a2a;
+            margin: 10px 0;
+            padding: 15px;
+            border-radius: 5px;
             display: flex;
             justify-content: space-between;
             align-items: center;
+            box-shadow: 0 2px 5px rgba(0, 0, 0, 0.3);
         }
         .actions button {
             margin-left: 5px;
-            padding: 5px 10px;
-            font-size: 12px;
+            padding: 8px 12px;
+            font-size: 14px;
+        }
+        .section {
+            margin-bottom: 30px;
+        }
+        .section h3 {
+            margin-bottom: 10px;
+            font-size: 20px;
         }
     </style>
 </head>
 <body>
     <div class="container">
-        <h2>Rifa</h2>
-        <div id="auth">
-            <input type="text" id="usuario" placeholder="Usuario">
-            <input type="password" id="contraseña" placeholder="Contraseña">
-            <button onclick="iniciarSesion()">Iniciar Sesión</button>
+        <h2>Rifa Fácil</h2>
+
+        <!-- Configuración de boletos -->
+        <div class="section">
+            <h3>1. Configurar Boletos</h3>
+            <input type="number" id="totalBoletos" placeholder="Cantidad total de boletos" min="1">
+            <button id="btnEstablecerBoletos">Establecer Boletos</button>
         </div>
-        <div id="app" style="display: none;">
-            <input type="text" id="nombre" placeholder="Nombre">
-            <input type="text" id="telefono" placeholder="Teléfono">
-            <button onclick="agregarParticipante()">Agregar</button>
-            <br>
-            <input type="text" id="nuevaLista" placeholder="Nombre de lista">
-            <button onclick="crearLista()">Crear Lista</button>
-            <select id="listas" onchange="cambiarLista()"></select>
-            <button onclick="sortear()">Sortear</button>
-            <button onclick="editarLista()">Editar Lista</button>
-            <button onclick="borrarLista()">Borrar Lista</button>
+
+        <!-- Agregar participante -->
+        <div class="section">
+            <h3>2. Agregar Participante</h3>
+            <input type="text" id="nombre" placeholder="Nombre del participante">
+            <input type="text" id="telefono" placeholder="Teléfono del participante">
+            <input type="text" id="numerosBoletos" placeholder="Números de boletos (separados por comas)">
+            <button id="btnAgregarParticipante">Guardar Participante</button>
+        </div>
+
+        <!-- Gestión de listas -->
+        <div class="section">
+            <h3>3. Gestión de Listas</h3>
+            <select id="listas"></select>
+            <button id="btnCrearLista">Crear Nueva Lista</button>
+            <button id="btnEditarLista">Editar Nombre de Lista</button>
+            <button id="btnEliminarLista">Eliminar Lista</button>
+        </div>
+
+        <!-- Lista de participantes -->
+        <div class="section">
+            <h3>4. Lista de Participantes</h3>
             <ul id="participantes"></ul>
         </div>
-    </div>
-    
-    <script>
-        // Generar un hash de la contraseña para mayor seguridad
-        const usuarioLocal = "admin";
-        const contraseñaHash = btoa("1234"); // Contraseña encriptada (base64)
 
+        <!-- Sorteo -->
+        <div class="section">
+            <h3>5. Sorteo</h3>
+            <button id="btnSortear">Iniciar Sorteo</button>
+        </div>
+    </div>
+    <script>
         let listas = JSON.parse(localStorage.getItem("rifas")) || { "Rifa Principal": [] };
         let listaActual = "Rifa Principal";
+        let boletosDisponibles = [];
 
-        function iniciarSesion() {
-            const usuario = document.getElementById("usuario").value;
-            const contraseña = document.getElementById("contraseña").value;
-            if (usuario === usuarioLocal && btoa(contraseña) === contraseñaHash) {
-                document.getElementById("auth").style.display = "none";
-                document.getElementById("app").style.display = "block";
-                actualizarSelect();
+        document.getElementById("btnEstablecerBoletos").addEventListener("click", establecerBoletos);
+        document.getElementById("btnAgregarParticipante").addEventListener("click", agregarParticipante);
+        document.getElementById("listas").addEventListener("change", cambiarLista);
+        document.getElementById("btnCrearLista").addEventListener("click", crearLista);
+        document.getElementById("btnEditarLista").addEventListener("click", editarLista);
+        document.getElementById("btnEliminarLista").addEventListener("click", eliminarLista);
+        document.getElementById("btnSortear").addEventListener("click", sortear);
+
+        function establecerBoletos() {
+            const total = parseInt(document.getElementById("totalBoletos").value);
+            if (total > 0) {
+                boletosDisponibles = Array.from({ length: total }, (_, i) => i + 1);
+                alert(`Se han configurado ${total} boletos disponibles.`);
             } else {
-                alert("Usuario o contraseña incorrectos");
+                alert("Por favor, ingresa un número válido de boletos.");
             }
-        }
-
-        function actualizarSelect() {
-            let select = document.getElementById("listas");
-            select.innerHTML = "";
-            for (let lista in listas) {
-                let option = document.createElement("option");
-                option.value = lista;
-                option.textContent = lista;
-                select.appendChild(option);
-            }
-            select.value = listaActual;
-            mostrarParticipantes();
         }
 
         function agregarParticipante() {
-            let nombre = document.getElementById("nombre").value.trim();
-            let telefono = document.getElementById("telefono").value.trim();
-            if (nombre && telefono) {
-                listas[listaActual].push({ nombre, telefono });
-                localStorage.setItem("rifas", JSON.stringify(listas));
-                document.getElementById("nombre").value = "";
-                document.getElementById("telefono").value = "";
-                mostrarParticipantes();
-            } else {
-                alert("Por favor, completa todos los campos.");
+            const nombre = document.getElementById("nombre").value.trim();
+            const telefono = document.getElementById("telefono").value.trim();
+            const numerosBoletos = document.getElementById("numerosBoletos").value.split(",").map(num => parseInt(num.trim()));
+
+            if (!nombre || !telefono || numerosBoletos.some(isNaN)) {
+                alert("Por favor, completa todos los campos correctamente.");
+                return;
             }
+
+            for (let numero of numerosBoletos) {
+                if (!boletosDisponibles.includes(numero)) {
+                    alert(`El número de boleto ${numero} no está disponible.`);
+                    return;
+                }
+            }
+
+            listas[listaActual].push({ nombre, telefono, boletos: numerosBoletos });
+            boletosDisponibles = boletosDisponibles.filter(boleto => !numerosBoletos.includes(boleto));
+            localStorage.setItem("rifas", JSON.stringify(listas));
+            document.getElementById("nombre").value = "";
+            document.getElementById("telefono").value = "";
+            document.getElementById("numerosBoletos").value = "";
+            mostrarParticipantes();
         }
 
         function mostrarParticipantes() {
-            let lista = document.getElementById("participantes");
+            const lista = document.getElementById("participantes");
             lista.innerHTML = "";
             listas[listaActual].forEach((p, index) => {
-                let li = document.createElement("li");
+                const li = document.createElement("li");
                 li.innerHTML = `
-                    ${p.nombre} - ${p.telefono}
+                    ${p.nombre} - ${p.telefono} - Boletos: ${p.boletos.join(", ")}
                     <div class="actions">
                         <button onclick="editarParticipante(${index})">Editar</button>
                         <button onclick="borrarParticipante(${index})">Borrar</button>
@@ -143,29 +186,46 @@
         }
 
         function editarParticipante(index) {
-            let nuevoNombre = prompt("Nuevo nombre:", listas[listaActual][index].nombre);
-            let nuevoTelefono = prompt("Nuevo teléfono:", listas[listaActual][index].telefono);
-            if (nuevoNombre && nuevoTelefono) {
-                listas[listaActual][index] = { nombre: nuevoNombre, telefono: nuevoTelefono };
-                localStorage.setItem("rifas", JSON.stringify(listas));
-                mostrarParticipantes();
+            const participante = listas[listaActual][index];
+            const nuevoNombre = prompt("Nuevo nombre:", participante.nombre);
+            const nuevoTelefono = prompt("Nuevo teléfono:", participante.telefono);
+            const nuevosBoletos = prompt("Nuevos boletos (separados por comas):", participante.boletos.join(","))
+                .split(",")
+                .map(num => parseInt(num.trim()));
+
+            if (!nuevoNombre || !nuevoTelefono || nuevosBoletos.some(isNaN)) {
+                alert("Por favor, completa todos los campos correctamente.");
+                return;
             }
+
+            for (let numero of nuevosBoletos) {
+                if (!boletosDisponibles.includes(numero) && !participante.boletos.includes(numero)) {
+                    alert(`El número de boleto ${numero} no está disponible.`);
+                    return;
+                }
+            }
+
+            boletosDisponibles.push(...participante.boletos);
+            boletosDisponibles = boletosDisponibles.filter(boleto => !nuevosBoletos.includes(boleto));
+
+            listas[listaActual][index] = { nombre: nuevoNombre, telefono: nuevoTelefono, boletos: nuevosBoletos };
+            localStorage.setItem("rifas", JSON.stringify(listas));
+            mostrarParticipantes();
         }
 
         function borrarParticipante(index) {
-            if (confirm("¿Seguro que deseas borrar este participante?")) {
-                listas[listaActual].splice(index, 1);
-                localStorage.setItem("rifas", JSON.stringify(listas));
-                mostrarParticipantes();
-            }
+            const participante = listas[listaActual][index];
+            boletosDisponibles.push(...participante.boletos);
+            listas[listaActual].splice(index, 1);
+            localStorage.setItem("rifas", JSON.stringify(listas));
+            mostrarParticipantes();
         }
 
         function crearLista() {
-            let nuevaLista = document.getElementById("nuevaLista").value.trim();
+            const nuevaLista = prompt("Nombre de la nueva lista:");
             if (nuevaLista && !listas[nuevaLista]) {
                 listas[nuevaLista] = [];
                 localStorage.setItem("rifas", JSON.stringify(listas));
-                document.getElementById("nuevaLista").value = "";
                 listaActual = nuevaLista;
                 actualizarSelect();
             } else {
@@ -173,13 +233,8 @@
             }
         }
 
-        function cambiarLista() {
-            listaActual = document.getElementById("listas").value;
-            mostrarParticipantes();
-        }
-
         function editarLista() {
-            let nuevoNombre = prompt("Nuevo nombre para la lista:", listaActual);
+            const nuevoNombre = prompt("Nuevo nombre para la lista:", listaActual);
             if (nuevoNombre && !listas[nuevoNombre]) {
                 listas[nuevoNombre] = listas[listaActual];
                 delete listas[listaActual];
@@ -191,22 +246,45 @@
             }
         }
 
-        function borrarLista() {
-            if (confirm(`¿Seguro que deseas borrar la lista "${listaActual}"?`)) {
+        function eliminarLista() {
+            if (Object.keys(listas).length === 1) {
+                alert("No puedes eliminar la última lista.");
+                return;
+            }
+            if (confirm(`¿Seguro que deseas eliminar la lista "${listaActual}"?`)) {
                 delete listas[listaActual];
-                listaActual = Object.keys(listas)[0] || "Rifa Principal";
+                listaActual = Object.keys(listas)[0];
                 localStorage.setItem("rifas", JSON.stringify(listas));
                 actualizarSelect();
             }
         }
 
+        function cambiarLista() {
+            listaActual = document.getElementById("listas").value;
+            mostrarParticipantes();
+        }
+
         function sortear() {
             if (listas[listaActual].length > 0) {
-                let ganador = listas[listaActual][Math.floor(Math.random() * listas[listaActual].length)];
-                alert(`El ganador es: ${ganador.nombre} - ${ganador.telefono}`);
+                const participantes = listas[listaActual];
+                const ganador = participantes[Math.floor(Math.random() * participantes.length)];
+                alert(`El ganador es: ${ganador.nombre} - ${ganador.telefono} - Boletos: ${ganador.boletos.join(", ")}`);
             } else {
                 alert("No hay participantes en esta lista.");
             }
+        }
+
+        function actualizarSelect() {
+            const select = document.getElementById("listas");
+            select.innerHTML = "";
+            for (let lista in listas) {
+                const option = document.createElement("option");
+                option.value = lista;
+                option.textContent = lista;
+                select.appendChild(option);
+            }
+            select.value = listaActual;
+            mostrarParticipantes();
         }
 
         actualizarSelect();
